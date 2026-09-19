@@ -2,29 +2,117 @@
 entrada: .asciz "Seja bem vindo ao nosso jogo, vamos começar gerando o nosso número...\n"
 gerador_sucesso: .asciz "Número gerado com sucesso! Pode iniciar a tentativa\n"
 msg_tentativa: .asciz "Digite um número de 1 a 100"
+msg_baixo: .asciz "O palpite foi muito baixo!\n"
+msg_alto: .asciz "O palpite foi muito alto!\n"
+msg_correto: .asciz "Parabens! Voce acertou o numero!\n"
+msg_invalido: .asciz "Valor invalido. Digite um numero entre 1 e 100.\n"
+
 .text
+.globl main
+
+
 main:
+
+    # Inicializa a cabeça da lista como vazia
+    li s0, 0
+
+    # Inicializa a quantidade de tentativas
+    li s2, 0
+
     # Printa mensagem de entrada
     li a7, 4
     la a0, entrada
     ecall
+
+    # Cria uma semente para o nosso gerador
+    li a7, 30
+    ecall
+    mv t0, a0
+
     # Chama o gerador
     jal gerador_numero
-
 
     # Agora que implementamos o valor, imprimimos
     # a mensagem de saída  
     li a7, 4
     la a0, gerador_sucesso
-    
+    ecall
+
+
+    #loop para receber todas as tentativas
+loop_tentativas:
+
     #Agora devemos receber o valor para que possamos comparar
     jal tentativa
+
+    #Salvamos o valor recebido para não perder durante outras funções
+    mv s3, a0
+
+    #Agora verificamos se o valor é menor que 1
+    li t0, 1
+    blt s3, t0, entrada_invalida
+
+    #Agora verificamos se o valor é maior que 100
+    li t0, 100
+    blt t0, s3, entrada_invalida
+
+    #Enviamos o valor recebido para adicionar na lista
+    mv a0, s3
     jal adicionar_tentativa
-    
+
+    #Aumentamos a quantidade de tentativas
+    addi s2, s2, 1
+
     #Agora devemos fazer a tentativa 
+    #Primeiro verificamos se o valor é muito baixo
+    blt s3, s1, palpite_baixo
+
+    #Depois verificamos se o valor é muito alto
+    blt s1, s3, palpite_alto
+
+    #Se o valor não for menor nem maior, então está correto
+    j palpite_correto
+    
+
+entrada_invalida:
+    #Imprimimos uma mensagem informando que o valor é inválido
+    li a7, 4
+    la a0, msg_invalido
     ecall
-   j fim
-   
+
+    #Como o valor é inválido, voltamos sem adicionar na lista
+    j loop_tentativas
+
+
+palpite_baixo:
+    #Imprimimos uma mensagem informando que o valor é muito baixo
+    li a7, 4
+    la a0, msg_baixo
+    ecall
+
+    #Voltamos para receber uma nova tentativa
+    j loop_tentativas
+
+
+palpite_alto:
+    #Imprimimos uma mensagem informando que o valor é muito alto
+    li a7, 4
+    la a0, msg_alto
+    ecall
+
+    #Voltamos para receber uma nova tentativa
+    j loop_tentativas
+
+
+palpite_correto:
+    #Imprimimos uma mensagem informando que o jogador acertou
+    li a7, 4
+    la a0, msg_correto
+    ecall
+
+    #Depois devemos imprimir a quantidade e a lista de tentativas
+    j fim
+
 
 tentativa:
 	#Imprime a string de entrada
@@ -38,7 +126,6 @@ tentativa:
     ret
     #Valor recebido armazenado em t4, retornamos a main
 	
-
 
 gerador_numero:
     # t0 contém a semente
@@ -56,8 +143,9 @@ gerador_numero:
     addi s1, s1, 1
     #Valor recebido armazenado em s1
     ret
-adicionar_tentativa:
+    
 
+adicionar_tentativa:
     # Precisamos preservar a tentativa porque
     # a0 será usado pelo sbrk
     mv t1, a0
@@ -77,14 +165,6 @@ adicionar_tentativa:
     mv s0, t0
 
     ret
-
-    
-    
-    
-    
-    
-    
-    
     
     
 fim:

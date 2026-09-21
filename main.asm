@@ -6,6 +6,10 @@ msg_baixo: .asciz "O palpite foi muito baixo!\n"
 msg_alto: .asciz "O palpite foi muito alto!\n"
 msg_correto: .asciz "Parabens! Voce acertou o numero!\n"
 msg_invalido: .asciz "Valor invalido. Digite um numero entre 1 e 100.\n"
+msg_qtd_tentativas: .asciz "Quantidade de tentativas: "
+msg_lista_tentativas: .asciz "Tentativas feitas (da mais recente para a mais antiga): "
+espaco: .asciz " "
+nova_linha: .asciz "\n"
 
 .text
 .globl main
@@ -168,5 +172,58 @@ adicionar_tentativa:
     
     
 fim:
+    # ---------------------------------------------------
+    # IMPRIME A QUANTIDADE DE TENTATIVAS
+    # ---------------------------------------------------
+    # Imprime a string "Quantidade de tentativas: "
+    li a7, 4
+    la a0, msg_qtd_tentativas
+    ecall
+
+    # Imprime o valor inteiro do contador (s2)
+    li a7, 1
+    mv a0, s2
+    ecall
+
+    # Pula uma linha
+    li a7, 4
+    la a0, nova_linha
+    ecall
+
+    # ---------------------------------------------------
+    # PERCORRE E IMPRIME A LISTA LIGADA
+    # ---------------------------------------------------
+    # Imprime a string "Tentativas feitas: "
+    li a7, 4
+    la a0, msg_lista_tentativas
+    ecall
+
+    # Prepara o ponteiro para percorrer a lista
+    mv t0, s0              # t0 recebe a cabeça da lista (s0)
+
+loop_imprime_lista:
+    beqz t0, fim_programa  # Se o ponteiro for 0 (NULL), chegamos ao fim da lista
+
+    # Imprime o valor da tentativa armazenado no nó atual
+    lw a0, 0(t0)           # Carrega o valor (primeiros 4 bytes do nó)
+    li a7, 1               # ecall para imprimir inteiro
+    ecall
+
+    # Imprime um espaço em branco para separar os números
+    li a7, 4
+    la a0, espaco
+    ecall
+
+    # Avança para o próximo nó da lista
+    lw t0, 4(t0)           # t0 recebe o endereço do próximo nó (últimos 4 bytes)
+    j loop_imprime_lista   # Volta para o início do loop
+
+fim_programa:
+    # Pula uma linha no final para o terminal ficar organizado
+    li a7, 4
+    la a0, nova_linha
+    ecall
+
+    # Encerra o programa corretamente
     li a7, 10
     ecall
